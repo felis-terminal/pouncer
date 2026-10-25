@@ -14,15 +14,16 @@ from pathlib import Path
 
 USAGE = """usage: tools/release.py check <tag> [<sha>]
        tools/release.py notes <tag>
-       tools/release.py forgejo <tag> <notes-file>
+       tools/release.py forgejo <tag>
 
 check    refuses a tag that disagrees with Cargo.toml, Cargo.lock or
          CHANGELOG.md; with <sha>, also one that is lightweight or names
          another revision.
 notes    prints the release notes: the tag's CHANGELOG section, or
          Unreleased for a candidate (vX.Y.Z-rc.N).
-forgejo  creates the Forgejo release for <tag> unless it exists. Reads
-         GITHUB_SERVER_URL, GITHUB_REPOSITORY and RELEASE_TOKEN.
+forgejo  creates the Forgejo release for <tag>, with those notes, unless
+         it exists. Reads GITHUB_SERVER_URL, GITHUB_REPOSITORY and
+         RELEASE_TOKEN.
 """
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -110,7 +111,7 @@ def git(root: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
-def forgejo(tag: str, notes_file: Path) -> None:
+def forgejo(root: Path, tag: str) -> None:
     _, candidate = parse_tag(tag)
     missing = [
         name
@@ -143,10 +144,12 @@ def forgejo(tag: str, notes_file: Path) -> None:
                 f"looking up {tag} answered HTTP {error.code}"
             ) from error
 
+    body = notes(root, tag)
+    print(body, end="")
     payload = {
         "tag_name": tag,
         "name": f"pouncer {tag}",
-        "body": notes_file.read_text(),
+        "body": body,
         "prerelease": candidate,
     }
     create = urllib.request.Request(
@@ -168,8 +171,8 @@ def main(argv: list[str]) -> int:
                 check(ROOT, tag, sha)
             case ["notes", tag]:
                 print(notes(ROOT, tag), end="")
-            case ["forgejo", tag, notes_file]:
-                forgejo(tag, Path(notes_file))
+            case ["forgejo", tag]:
+                forgejo(ROOT, tag)
             case _:
                 print(USAGE, file=sys.stderr, end="")
                 return 64

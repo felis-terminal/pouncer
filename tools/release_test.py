@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import http.server
+import json
 import os
 import subprocess
+import threading
 from pathlib import Path
 
 import pytest
 
-from release import ReleaseError, check, notes
+from release import ReleaseError, check, forgejo, notes
 
 CHANGELOG = """# Changelog
 
@@ -161,3 +164,39 @@ def test_notes_name_the_tag_in_the_install_commands(released: Path) -> None:
     text = notes(released, "v0.2.0")
     assert "cargo install pouncer --version 0.2.0" in text
     assert "nix run github:felis-terminal/pouncer/v0.2.0" in text
+
+
+def test_the_forgejo_release_body_is_exactly_the_notes(
+    released: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created: list[dict] = []
+
+    class Forgejo(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *args: object) -> None:
+            pass
+
+        def do_GET(self) -> None:
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def do_POST(self) -> None:
+            length = int(self.headers["Content-Length"])
+            created.append(json.loads(self.rfile.read(length)))
+            self.send_response(201)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"{}")
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Forgejo)
+    thread = threading.Thread(target=server.serve_forever, args=(0.01,), daemon=True)
+    thread.start()
+    monkeypatch.setenv("GITHUB_SERVER_URL", f"http://127.0.0.1:{server.server_port}")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "felis-terminal/pouncer")
+    monkeypatch.setenv("RELEASE_TOKEN", "fixture-token")
+    try:
+        forgejo(released, "v0.2.0")
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert [release["body"] for release in created] == [notes(released, "v0.2.0")]
