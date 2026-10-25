@@ -1,0 +1,6 @@
+/target
+/result
+/result-*
+*.profraw
+.pre-commit-config.yaml
+/mutants.out*

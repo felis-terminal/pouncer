@@ -1,0 +1,31 @@
+---
+source: tests/cli_input.rs
+expression: short
+---
+Terminal-agnostic single-keystroke hint picker for scrollback
+
+Usage: pouncer [OPTIONS] [FILE]
+
+Arguments:
+  [FILE]  Scrollback to scan: a path, or "-"/omitted to read stdin
+
+Options:
+  -e, --regex <RE>             Regex pattern to match (repeatable)
+      --preset <NAME>          Curated pattern(s): url, email, ipv4, ipv6, path, sha, uuid, filepos, hostport, hex, mdlink, jwt, pod, number
+      --capture <N>            Pick capture group N instead of the whole match
+      --min-len <N>            Drop matches narrower than N display columns [default: 0]
+      --alphabet <ALPHABET>    Characters labels are drawn from [default: asdfghjklqwertyuiopzxcvbnm]
+      --reverse                Give the shortest labels to the last matches
+      --unique                 Share one label across identical match values
+  -m, --multi                  Pick several matches: a label toggles selection, Enter confirms the set
+      --action <ACTION>        copy | open | <command with {}>. Absent prints the pick to stdout
+      --upper-action <ACTION>  Action for a label typed in uppercase, in the same form as --action
+      --cols <N>               Grid width in columns for parsing and label placement
+      --hint-fg <COLOR>        Hint label foreground. Default black
+      --hint-bg <COLOR>        Hint label background, as --hint-fg. Default green
+      --select-fg <COLOR>      Selected-label foreground in --multi, as --hint-fg. Default white
+      --select-bg <COLOR>      Selected-label background in --multi, as --hint-fg. Default blue
+      --dim                    Dim the repainted text so labels stand out more
+      --generate <KIND>        Print the man page or a shell completion script to stdout and exit [possible values: man, complete-bash, complete-zsh, complete-fish]
+  -h, --help                   Print help (see more with '--help')
+  -V, --version                Print version

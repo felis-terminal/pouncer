@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+enable-openid-connect: true
+
+jobs:
+  checks:
+    name: flake checks (${{ matrix.runner }})
+    strategy:
+      matrix:
+        runner: [x86_64-linux, aarch64-darwin]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Mic92/niks3-action@6d24bc1d87acdfac8e5dc3266f7b28ae99051adf # v1.5.0
+        with:
+          server-url: https://niks3.natsukium.com
+      - run: nix run --inputs-from . nixpkgs#nix-fast-build -- --no-nom --skip-cached --no-link --flake .#checks
+
+  windows:
+    name: cargo test (x86_64-windows)
+    runs-on: x86_64-windows
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # $ErrorActionPreference does not reach native commands' exit codes.
+      - run: |
+          cargo test --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

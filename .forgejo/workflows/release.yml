@@ -1,0 +1,76 @@
+# The release gate. A tag publishes the Forgejo release page only after the
+# tag is checked against the manifests, every flake check passes on both Nix
+# runners, and the tests pass on Windows; the GitHub mirror's
+# release-mirror.yml waits for that page before it republishes the release and
+# uploads the crate to crates.io.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+# Forgejo ignores GitHub's `permissions: id-token: write`; niks3 needs the
+# OIDC token (see ci.yml).
+enable-openid-connect: true
+
+# One release at a time, never cancelled: abandoning a run mid-publication
+# would leave the mirror waiting on a page that never appears.
+concurrency:
+  group: pouncer-release
+  cancel-in-progress: false
+
+jobs:
+  verify-tag:
+    name: the tag names this exact revision
+    runs-on: x86_64-linux
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Annotated-tag inspection needs the tag object, which a depth-1
+        # checkout does not carry.
+        with:
+          fetch-depth: 0
+      - run: nix develop -c python3 tools/release.py check "$GITHUB_REF_NAME" "$GITHUB_SHA"
+
+  # ci.yml's job, repeated: a tag can point at a revision that never had a
+  # green run on main.
+  checks:
+    name: flake checks (${{ matrix.runner }})
+    needs: [verify-tag]
+    strategy:
+      matrix:
+        runner: [x86_64-linux, aarch64-darwin]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Mic92/niks3-action@6d24bc1d87acdfac8e5dc3266f7b28ae99051adf # v1.5.0
+        with:
+          server-url: https://niks3.natsukium.com
+      - run: nix run --inputs-from . nixpkgs#nix-fast-build -- --no-nom --skip-cached --no-link --flake .#checks
+
+  # ci.yml's job, repeated for the same reason as checks.
+  windows:
+    name: cargo test (x86_64-windows)
+    needs: [verify-tag]
+    runs-on: x86_64-windows
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: |
+          cargo test --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  release:
+    name: publish the release page
+    needs: [checks, windows]
+    runs-on: x86_64-linux
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: nix develop -c python3 tools/release.py notes "$GITHUB_REF_NAME" | tee release-notes.md
+      - env:
+          RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix develop -c python3 tools/release.py forgejo "$GITHUB_REF_NAME" release-notes.md

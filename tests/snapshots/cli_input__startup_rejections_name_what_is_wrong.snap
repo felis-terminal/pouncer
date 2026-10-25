@@ -1,0 +1,37 @@
+---
+source: tests/cli_input.rs
+expression: "report.join(\"\\n\\n\")"
+---
+$ pouncer 
+pouncer: no patterns: pass at least one --regex or --preset (nothing matches by default)
+
+$ pouncer --preset nope
+pouncer: unknown --preset "nope"; available: url, email, ipv4, ipv6, path, sha, uuid, filepos, hostport, hex, mdlink, jwt, pod, number
+
+$ pouncer --regex (
+pouncer: invalid regex "(": regex parse error:
+    (
+    ^
+error: unclosed group
+
+$ pouncer --regex a --capture 1
+pouncer: --capture 1: --regex "a" has no group 1
+
+$ pouncer --preset url --alphabet aa
+pouncer: invalid --alphabet: alphabet repeats the character 'a'
+
+$ pouncer --preset url --multi --upper-action open
+pouncer: --upper-action needs a single pick; it has no meaning with --multi
+
+$ pouncer --preset url --upper-action open --alphabet abC
+pouncer: --upper-action reads an uppercase key as the alternate action, so --alphabet must be lowercase
+
+$ pouncer --preset url --hint-bg nope
+error: invalid value 'nope' for '--hint-bg <COLOR>': unknown color "nope"; expected a name (e.g. red, dark_blue), 0-255, or #rrggbb
+
+For more information, try '--help'.
+
+$ pouncer --preset url --cols 0
+error: invalid value '0' for '--cols <N>': 0 is not in 1..=65535
+
+For more information, try '--help'.

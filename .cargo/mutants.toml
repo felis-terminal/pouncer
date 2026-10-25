@@ -1,0 +1,5 @@
+test_tool = "nextest"
+profile = "mutants"
+# Windows-only modules: CI mutates on Linux, where they are not compiled, so
+# every mutant in them would survive without having been tested at all.
+exclude_globs = ["src/action/windows.rs", "src/terminal/console.rs"]

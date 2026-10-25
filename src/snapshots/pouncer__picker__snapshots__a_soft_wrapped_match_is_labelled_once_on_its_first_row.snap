@@ -1,0 +1,11 @@
+---
+source: src/picker.rs
+expression: "Overlay\n{\n    input: \"x https://a.example/a/very/long/path y\", cols: 16,\n    ..Overlay::default()\n}.screen()"
+---
++----------------+
+|x attps://a.exam|
+   ^
+|ple/a/very/long/|
+|path y          |
+|                |
++----------------+

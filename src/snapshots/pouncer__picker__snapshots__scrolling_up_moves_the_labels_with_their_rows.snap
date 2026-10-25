@@ -1,0 +1,14 @@
+---
+source: src/picker.rs
+expression: "Overlay { input: &input, scroll_up: 3, ..Overlay::default() }.screen()"
+---
++------------------------------+
+|3 dttp://h3.example           |
+   ^
+|4 fttp://h4.example           |
+   ^
+|5 gttp://h5.example           |
+   ^
+|6 http://h6.example   ^v  40% |
+   ^
++------------------------------+

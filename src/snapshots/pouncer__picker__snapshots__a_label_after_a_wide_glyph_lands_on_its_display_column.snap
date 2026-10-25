@@ -1,0 +1,11 @@
+---
+source: src/picker.rs
+expression: "Overlay { input: \"漢字 https://a.example\", ..Overlay::default() }.screen()"
+---
++------------------------------+
+|漢字 attps://a.example        |
+      ^
+|                              |
+|                              |
+|                              |
++------------------------------+

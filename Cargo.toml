@@ -1,0 +1,67 @@
+[package]
+name = "pouncer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/felis-terminal/pouncer"
+description = "Terminal-agnostic single-keystroke hint picker for scrollback"
+keywords = ["terminal", "hints", "scrollback", "picker"]
+categories = ["command-line-utilities"]
+include = ["/src", "/tests", "/docs", "/README.md", "/LICENSE", "/CHANGELOG.md"]
+
+[dependencies]
+felis-grid = "0.2"
+felis-vt = "0.1"
+regex = "1"
+unicode-width = "0.2"
+clap = { version = "4", features = ["derive"] }
+clap_mangen = "0.3"
+clap_complete = "4"
+crossterm = { version = "0.29", features = ["use-dev-tty"] }
+anyhow = "1"
+
+[target.'cfg(unix)'.dependencies]
+signal-hook = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+crossterm_winapi = "0.9"
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_Com",
+  "Win32_System_Console",
+  "Win32_System_Registry",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+insta = "1"
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+redundant_pub_crate = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_lossless = "allow"
+unwrap_used = "warn"
+expect_used = "warn"
+todo = "warn"
+dbg_macro = "warn"
+mod_module_files = "warn"
+
+[profile.mutants]
+inherits = "test"
+debug = 0

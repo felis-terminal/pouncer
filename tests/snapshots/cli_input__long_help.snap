@@ -1,0 +1,123 @@
+---
+source: tests/cli_input.rs
+expression: long
+---
+Terminal-agnostic single-keystroke hint picker for scrollback.
+
+Patterns are matched on logical rows, so a match that soft-wraps at the grid's right edge is still found whole. That needs a source that pipes logical lines: "tmux capture-pane -J", or felis' pipe action. A physical-row source ("tmux capture-pane -p", or a "cat" of already-wrapped output) has replaced the wrap with a newline before pouncer sees it, and a match split across that newline cannot be recovered.
+
+The repaint carries the source's colors when the producer kept them: "tmux capture-pane -e", "kitty @ get-text --ansi", "--color=always" on a plain pipe, felis' pipe action with "ansi". A producer that strips SGR yields a plain repaint; nothing is guessed back.
+
+Usage: pouncer [OPTIONS] [FILE]
+
+Arguments:
+  [FILE]
+          Scrollback to scan: a path, or "-"/omitted to read stdin.
+          
+          A file is how a producer that runs pouncer inside an interactive terminal hands over the region, since there stdin is the keyboard (felis' pipe action).
+
+Options:
+  -e, --regex <RE>
+          Regex pattern to match (repeatable).
+          
+          Rust regex syntax: no lookaround or backreferences. Nothing matches without --regex or --preset.
+
+      --preset <NAME>
+          Curated pattern(s): url, email, ipv4, ipv6, path, sha, uuid, filepos, hostport, hex, mdlink, jwt, pod, number.
+          
+          Comma-separated and repeatable; off unless listed. Where two start on the same cell, a --regex beats any preset, and among presets the one named first wins: "filepos,path" keeps "src/main.rs:12" whole.
+
+      --capture <N>
+          Pick capture group N instead of the whole match.
+          
+          The label still covers the whole match. Every pattern must have group N.
+
+      --min-len <N>
+          Drop matches narrower than N display columns.
+          
+          Measured on the whole match (across a soft wrap), not on the --capture value. Keeps a permissive pattern usable: "--preset sha" on a hex dump.
+          
+          [default: 0]
+
+      --alphabet <ALPHABET>
+          Characters labels are drawn from.
+          
+          Earlier characters make the shorter labels. Labels are at most two keys, so N characters label at most N×N matches.
+          
+          [default: asdfghjklqwertyuiopzxcvbnm]
+
+      --reverse
+          Give the shortest labels to the last matches
+
+      --unique
+          Share one label across identical match values
+
+  -m, --multi
+          Pick several matches: a label toggles selection, Enter confirms the set
+
+      --action <ACTION>
+          copy | open | <command with {}>. Absent prints the pick to stdout.
+          
+          "copy" sets the clipboard with OSC 52. "open" runs xdg-open (open on macOS, the default handler on Windows). Anything else is a command where {} stands for the picked value(s) as separate arguments: a shell command run with sh -c on Unix, and on Windows a program and its arguments, split like a C program's command line and run without a shell. All picks go to one run. Without --action each value is printed on its own line.
+
+      --upper-action <ACTION>
+          Action for a label typed in uppercase, in the same form as --action.
+          
+          One binding then offers two actions. Single-pick only; rejected with --multi.
+
+      --cols <N>
+          Grid width in columns for parsing and label placement.
+          
+          Defaults to the terminal width; set it when pouncer's terminal is not the source's width (a tmux popup narrower than the captured pane) so soft-wrap reconstructs as it did at the source. Columns past pouncer's own right edge are not drawn, and a match starting there gets no label.
+
+      --hint-fg <COLOR>
+          Hint label foreground. Default black.
+          
+          A color is a name (red, dark_blue, ...), an ANSI index 0-255, or #rrggbb.
+
+      --hint-bg <COLOR>
+          Hint label background, as --hint-fg. Default green
+
+      --select-fg <COLOR>
+          Selected-label foreground in --multi, as --hint-fg. Default white
+
+      --select-bg <COLOR>
+          Selected-label background in --multi, as --hint-fg. Default blue
+
+      --dim
+          Dim the repainted text so labels stand out more.
+          
+          Composes with the source style: a bold red cell stays bold red, dimmed.
+
+      --generate <KIND>
+          Print the man page or a shell completion script to stdout and exit
+
+          Possible values:
+          - man:           pouncer(1) in roff
+          - complete-bash: bash completion script
+          - complete-zsh:  zsh completion script
+          - complete-fish: fish completion script
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+Keys:
+  a label        pick it (with --multi: toggle it)
+  Shift+label    pick it for --upper-action
+  Enter          confirm the --multi selection
+  Backspace      undo the last typed key
+  Esc, Ctrl-c, Ctrl-g
+                 cancel
+  arrows, PgUp/PgDn, Home/End, Ctrl-d/u/f/b
+                 scroll
+
+A single match is picked without showing the overlay.
+
+Exit status:
+  0    a match was picked and its action succeeded
+  1    no matches, or an error (including a failed action)
+  2    invalid command line
+  130  cancelled

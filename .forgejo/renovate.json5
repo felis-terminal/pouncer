@@ -1,0 +1,29 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:best-practices"],
+  timezone: "Asia/Tokyo",
+  minimumReleaseAge: "3 days",
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: ["before 3:00am on monday"],
+  },
+  automerge: true,
+  automergeStrategy: "squash",
+  prConcurrentLimit: 5,
+  packageRules: [
+    {
+      matchUpdateTypes: ["major"],
+      automerge: false,
+    },
+    {
+      // felis-vt and felis-grid are pre-1.0, so a minor is a breaking bump
+      // that moves pouncer's alignment with felis; review it by hand.
+      matchPackageNames: ["felis-vt", "felis-grid"],
+      matchUpdateTypes: ["minor"],
+      automerge: false,
+    },
+  ],
+  nix: {
+    enabled: true,
+  },
+}

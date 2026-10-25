@@ -1,0 +1,12 @@
+---
+source: src/picker.rs
+expression: "Overlay\n{\n    input: \"http://1 http://2 http://3\\nhttp://4 http://5\", alphabet: \"ab\",\n    ..Overlay::default()\n}.screen()"
+---
++------------------------------+
+|aatp://1 abtp://2 batp://3    |
+ ^^       ^^       ^^
+|bbtp://4 http://5             |
+ ^^
+|                              |
+|                              |
++------------------------------+

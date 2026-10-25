@@ -1,0 +1,41 @@
+name: mutants
+
+on:
+  pull_request:
+    branches: [main]
+
+enable-openid-connect: true
+
+concurrency:
+  group: mutants-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  mutants:
+    name: cargo mutants on the diff
+    runs-on: x86_64-linux
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # The diff needs the base branch, which a depth-1 checkout lacks.
+        with:
+          fetch-depth: 0
+      - uses: Mic92/niks3-action@6d24bc1d87acdfac8e5dc3266f7b28ae99051adf # v1.5.0
+        with:
+          server-url: https://niks3.natsukium.com
+      - run: git diff "origin/${GITHUB_BASE_REF}...HEAD" > pr.diff
+      # 2 (missed) and 3 (timeout) are results; any other code is a broken run.
+      - run: |
+          status=0
+          nix develop -c cargo mutants --in-diff pr.diff --jobs 4 || status=$?
+          case $status in 0 | 2 | 3) ;; *) exit "$status" ;; esac
+      - env:
+          MUTANTS_TOKEN: ${{ secrets.MUTANTS_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$MUTANTS_TOKEN" ]; then
+            # A fork's pull request gets no secrets.
+            nix develop -c python3 tools/mutants_report.py body mutants.out
+          else
+            nix develop -c python3 tools/mutants_report.py comment mutants.out "$PR"
+          fi

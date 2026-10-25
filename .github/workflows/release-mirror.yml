@@ -1,0 +1,109 @@
+# The only GitHub workflow: releases are gated on Forgejo
+# (.forgejo/workflows/release.yml), and this republishes the finished Forgejo
+# release on the mirror once the push mirror delivers the tag, then uploads
+# the crate and opens the Homebrew tap bump. crates.io trusted publishing accepts only GitHub's OIDC tokens,
+# which is why the upload runs here rather than on Forgejo.
+name: release-mirror
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-mirror-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: wait for the Forgejo release
+        env:
+          SOURCE: https://git.natsukium.com/api/v1/repos/felis-terminal/pouncer/releases/tags/${{ github.ref_name }}
+        run: |
+          deadline=$((SECONDS + 10200))
+          until curl -sSf -o release.json "$SOURCE"; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "no Forgejo release for $GITHUB_REF_NAME; the gate failed or is still running"
+              exit 1
+            fi
+            sleep 60
+          done
+      - name: republish it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "GitHub already has $GITHUB_REF_NAME"
+            exit 0
+          fi
+          jq -r .body release.json > notes.md
+          prerelease=$(jq -r 'if .prerelease then "--prerelease" else "" end' release.json)
+          # shellcheck disable=SC2086 # $prerelease is empty or one flag
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$(jq -r .name release.json)" --notes-file notes.md $prerelease
+
+  # After `mirror`, which waits for the published Forgejo release, so only a
+  # tag that passed the Forgejo gate publishes. A candidate is skipped: its
+  # manifest already carries the final version.
+  crates:
+    needs: mirror
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    # The crate's trusted publisher names this environment, so no other job
+    # can mint a crates.io token.
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A rerun after a successful upload must not fail on the duplicate.
+      - name: skip a version crates.io already has
+        id: plan
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -A "pouncer-release ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY)" \
+            "https://crates.io/api/v1/crates/pouncer/$version")
+          case "$code" in
+            200) echo "publish=false" >> "$GITHUB_OUTPUT" ;;
+            404) echo "publish=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "crates.io answered HTTP $code"; exit 1 ;;
+          esac
+      # The verification build runs package code, so it finishes before a token exists.
+      - run: cargo publish --dry-run --locked
+        if: steps.plan.outputs.publish == 'true'
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+        id: auth
+        if: steps.plan.outputs.publish == 'true'
+      - run: cargo publish --no-verify --locked
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  # After `mirror` for the same reason as `crates`; homebrew.py itself skips a
+  # candidate.
+  homebrew:
+    needs: mirror
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The packaging diff reaches back to the previous release tag.
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 tools/homebrew.py "$GITHUB_REF_NAME"
+        env:
+          HOMEBREW_TAP: felis-terminal/homebrew-tap
+          # github.token cannot write to another repository, and a pull request
+          # it opened would start no workflow there.
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

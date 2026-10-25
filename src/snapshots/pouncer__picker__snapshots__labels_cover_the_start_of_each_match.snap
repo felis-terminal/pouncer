@@ -1,0 +1,12 @@
+---
+source: src/picker.rs
+expression: "Overlay\n{\n    input: \"see https://a.example\\nand http://b.example/x\",\n    ..Overlay::default()\n}.screen()"
+---
++------------------------------+
+|see attps://a.example         |
+     ^
+|and sttp://b.example/x        |
+     ^
+|                              |
+|                              |
++------------------------------+
