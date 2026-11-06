@@ -11,7 +11,7 @@ categories = ["command-line-utilities"]
 include = ["/src", "/tests", "/docs", "/README.md", "/LICENSE", "/CHANGELOG.md"]
 
 [dependencies]
-felis-grid = "0.2"
+felis-grid = "0.3"
 felis-vt = "0.1"
 regex = "1"
 unicode-width = "0.2"

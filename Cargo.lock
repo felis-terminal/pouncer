@@ -358,14 +358,14 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "felis-grid"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf69d68a3b0b11cd86e2cc79d1a8317203ceff105a1cd203703b36b9f1bc00c"
+checksum = "58a07ebf3985df863db74b3f0dc658e25ee66d334b98a1b28e462b0bda24cb4a"
 dependencies = [
  "bitflags",
  "bytes",
- "felis-protocol",
- "felis-vt",
+ "felis-protocol 0.2.0",
+ "felis-vt 0.2.0",
  "foldhash",
  "indexmap",
  "regex",
@@ -390,12 +390,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "felis-protocol"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55017fa57cf08f46ec327fb7ed60b17ca1cc277056864a8625b87c530a69ddc9"
+dependencies = [
+ "bitflags",
+ "bytes",
+ "prost",
+ "prost-types",
+ "serde",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "felis-vt"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c2d57699840fe3419c50dd797c8495eafa892bac614075c2327408f8618a346"
 dependencies = [
- "felis-protocol",
+ "felis-protocol 0.1.0",
+ "miniz_oxide",
+]
+
+[[package]]
+name = "felis-vt"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88d7a6f8adbadf4ea5653cb1d9f869cbac7662edbe27a64d7a18e0df711ad2ba"
+dependencies = [
+ "felis-protocol 0.2.0",
  "miniz_oxide",
 ]
 
@@ -600,7 +624,7 @@ dependencies = [
  "crossterm",
  "crossterm_winapi",
  "felis-grid",
- "felis-vt",
+ "felis-vt 0.1.0",
  "insta",
  "proptest",
  "regex",
