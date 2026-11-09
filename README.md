@@ -102,7 +102,7 @@ example, `--preset filepos,path` matches `src/main.rs:12` as a file position rat
 
 | Preset     | Matches                                         | Example                                | Notes                                                               |
 | ---------- | ----------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------- |
-| `url`      | `http://`, `https://`, `ftp://`, `file://` URLs | `https://example.com/a`                | Stops at whitespace and surrounding `)]>"'}` delimiters             |
+| `url`      | `http://`, `https://`, `ftp://`, `file://` URLs | `https://example.com/a`                | Stops at whitespace, `)]>"'}`, and non-ASCII punctuation or symbols |
 | `email`    | Email addresses                                 | `dev+tag@example.org`                  | Standard `local@domain.tld`                                         |
 | `ipv4`     | IPv4 dotted quads                               | `192.168.0.1`                          | Word-bounded                                                        |
 | `ipv6`     | IPv6 hextet addresses                           | `2001:db8::1`                          | Supports internal `::` compression                                  |

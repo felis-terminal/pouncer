@@ -10,6 +10,11 @@ on `main` since the last tag accrues under Unreleased.
 
 ## [Unreleased]
 
+### Fixed
+
+- The `url` preset stops at non-ASCII punctuation and symbols, so a URL followed directly by `）。`, `、`, or `～` in
+  CJK text no longer takes them and the rest of the sentence with it.
+
 ## [0.1.0] - 2026-10-25
 
 Initial release, for Linux, macOS, and Windows.

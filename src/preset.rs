@@ -6,8 +6,15 @@
 /// the user names presets in (see matcher).
 const PRESETS: &[(&str, &str)] = &[
     // Scheme then any non-delimiter run; stops at whitespace and the brackets
-    // and quotes that usually *surround* a URL rather than belong to it.
-    ("url", r#"(?:https?|ftp|file)://[^\s)\]>"'}]+"#),
+    // and quotes that usually *surround* a URL rather than belong to it. It
+    // also stops at non-ASCII punctuation and symbols: CJK prose puts `）。` or
+    // `～` straight after a URL with no space, so trimming only trailing
+    // punctuation would still swallow the rest of the sentence. The cost is
+    // cutting an IRI at `・`.
+    (
+        "url",
+        r#"(?:https?|ftp|file)://[[^\s)\]>"'}]--[[\p{P}\p{S}]--\p{ASCII}]]+"#,
+    ),
     ("email", r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"),
     ("ipv4", r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"),
     // Empty hextets (`{0,4}`) let one internal `::` match; a leading or
@@ -98,6 +105,20 @@ mod tests {
             .find("see (https://example.com/a) here")
             .expect("a url");
         assert_eq!(m.as_str(), "https://example.com/a");
+    }
+
+    #[test]
+    fn url_stops_at_cjk_punctuation_but_keeps_non_ascii_letters() {
+        assert_eq!(
+            all(
+                "url",
+                "（https://github.com/wez/wezterm/issues/1）。次 https://ja.wikipedia.org/wiki/猫、"
+            ),
+            [
+                "https://github.com/wez/wezterm/issues/1",
+                "https://ja.wikipedia.org/wiki/猫"
+            ]
+        );
     }
 
     #[test]
@@ -247,6 +268,47 @@ mod tests {
         let listed = available();
         for (name, _) in PRESETS {
             assert!(listed.contains(name), "{name} missing from available()");
+        }
+    }
+}
+
+#[cfg(test)]
+mod proptests {
+    #![allow(clippy::expect_used)]
+
+    use super::pattern;
+    use proptest::prelude::*;
+    use regex::Regex;
+
+    const URL_CHARS: &[char] = &[
+        'a', 'Z', '0', '/', '.', '-', '_', '~', '?', '=', '&', '#', '%', '+', ':', '@', '猫', 'ア',
+        'ー', 'é',
+    ];
+
+    const NON_ASCII_TERMINATORS: &[&str] = &[
+        "）", "。", "、", "」", "』", "】", "：", "！", "？", "…", "～", "＞", "｜", "🎉",
+    ];
+
+    const LEADS: &[&str] = &["", " ", "（", "「", "詳細は", "see "];
+
+    fn url_body() -> impl Strategy<Value = String> {
+        proptest::collection::vec(proptest::sample::select(URL_CHARS), 1..30)
+            .prop_map(|cs| cs.into_iter().collect())
+    }
+
+    proptest! {
+        #[test]
+        fn url_ends_at_the_first_non_ascii_punctuation_or_symbol_whatever_follows(
+            lead in proptest::sample::select(LEADS),
+            body in url_body(),
+            stop in proptest::sample::select(NON_ASCII_TERMINATORS),
+            rest in any::<String>(),
+        ) {
+            let re = Regex::new(pattern("url").expect("url preset")).expect("url compiles");
+            let url = format!("https://{body}");
+            let text = format!("{lead}{url}{stop}{rest}");
+            let found = re.find(&text).expect("a url").as_str();
+            prop_assert_eq!(found, url.as_str());
         }
     }
 }
