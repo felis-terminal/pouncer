@@ -10,6 +10,13 @@ on `main` since the last tag accrues under Unreleased.
 
 ## [Unreleased]
 
+### Fixed
+
+- The `url` preset stops at non-ASCII punctuation and symbols, so a URL followed directly by `）。`, `、`, or `～` in
+  CJK text no longer takes them and the rest of the sentence with it.
+- The `url` preset leaves out trailing `.`, `,`, `:`, `;`, `!`, and `?`, so a URL that ends a sentence no longer takes
+  the sentence's punctuation. The same characters inside a URL (`a.b?q=1`) are kept.
+
 ## [0.1.0] - 2026-10-25
 
 Initial release, for Linux, macOS, and Windows.

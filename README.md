@@ -100,22 +100,22 @@ Where two patterns start on the same cell, a `--regex` beats any preset, and amo
 example, `--preset filepos,path` matches `src/main.rs:12` as a file position rather than stopping at the path
 `src/main.rs`.
 
-| Preset     | Matches                                         | Example                                | Notes                                                               |
-| ---------- | ----------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------- |
-| `url`      | `http://`, `https://`, `ftp://`, `file://` URLs | `https://example.com/a`                | Stops at whitespace and surrounding `)]>"'}` delimiters             |
-| `email`    | Email addresses                                 | `dev+tag@example.org`                  | Standard `local@domain.tld`                                         |
-| `ipv4`     | IPv4 dotted quads                               | `192.168.0.1`                          | Word-bounded                                                        |
-| `ipv6`     | IPv6 hextet addresses                           | `2001:db8::1`                          | Supports internal `::` compression                                  |
-| `path`     | File paths with at least one `/`                | `/usr/bin`, `./src/main.rs`, `~/cfg`   | Bare words without `/` are never matched                            |
-| `sha`      | 7–40 lowercase hex digits                       | `1a2b3c4`, `deadbeef...`               | Pair with `--min-len` on noisy hex output                           |
-| `uuid`     | Canonical 8-4-4-4-12 UUIDs                      | `550e8400-e29b-41d4-a716-446655440000` | Case-insensitive                                                    |
-| `filepos`  | `path:line[:col]` positions                     | `src/main.rs:140:5`, `Makefile:12`     | Ignores clock times (`12:30:45`), `ip:port`, and `localhost:80`     |
-| `hostport` | `host:port`, `ipv4:port`, `[ipv6]:port`         | `localhost:8080`, `[::1]:443`          | Requires a letter in hostnames so `12:30` is ignored                |
-| `hex`      | `#rgb` and `#rrggbb` color codes                | `#ff8800`, `#abc`                      | Omits 4/8-digit forms so `#1234` issue numbers aren't matched       |
-| `mdlink`   | Markdown links `[text](url)`                    | `[docs](https://x.io/a)`               | Capture group 1 is the URL (`--capture 1` extracts just the target) |
-| `jwt`      | Base64url-encoded JWT tokens                    | `eyJhbGci...`                          | Matches `header.payload.[signature]` starting with `eyJ`            |
-| `pod`      | Kubernetes Deployment pod names                 | `web-7d4b9c8f6d-x2kq9`                 | Matches `<name>-<replicaset-hash>-<pod-suffix>`                     |
-| `number`   | Standalone integer runs                         | `42`, `8080`                           | Word-bounded; ignores digits embedded in words (`1500ms`, `1a2b`)   |
+| Preset     | Matches                                         | Example                                | Notes                                                                                          |
+| ---------- | ----------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `url`      | `http://`, `https://`, `ftp://`, `file://` URLs | `https://example.com/a`                | Stops at whitespace, `)]>"'}`, and non-ASCII punctuation or symbols; drops a trailing `.,:;!?` |
+| `email`    | Email addresses                                 | `dev+tag@example.org`                  | Standard `local@domain.tld`                                                                    |
+| `ipv4`     | IPv4 dotted quads                               | `192.168.0.1`                          | Word-bounded                                                                                   |
+| `ipv6`     | IPv6 hextet addresses                           | `2001:db8::1`                          | Supports internal `::` compression                                                             |
+| `path`     | File paths with at least one `/`                | `/usr/bin`, `./src/main.rs`, `~/cfg`   | Bare words without `/` are never matched                                                       |
+| `sha`      | 7–40 lowercase hex digits                       | `1a2b3c4`, `deadbeef...`               | Pair with `--min-len` on noisy hex output                                                      |
+| `uuid`     | Canonical 8-4-4-4-12 UUIDs                      | `550e8400-e29b-41d4-a716-446655440000` | Case-insensitive                                                                               |
+| `filepos`  | `path:line[:col]` positions                     | `src/main.rs:140:5`, `Makefile:12`     | Ignores clock times (`12:30:45`), `ip:port`, and `localhost:80`                                |
+| `hostport` | `host:port`, `ipv4:port`, `[ipv6]:port`         | `localhost:8080`, `[::1]:443`          | Requires a letter in hostnames so `12:30` is ignored                                           |
+| `hex`      | `#rgb` and `#rrggbb` color codes                | `#ff8800`, `#abc`                      | Omits 4/8-digit forms so `#1234` issue numbers aren't matched                                  |
+| `mdlink`   | Markdown links `[text](url)`                    | `[docs](https://x.io/a)`               | Capture group 1 is the URL (`--capture 1` extracts just the target)                            |
+| `jwt`      | Base64url-encoded JWT tokens                    | `eyJhbGci...`                          | Matches `header.payload.[signature]` starting with `eyJ`                                       |
+| `pod`      | Kubernetes Deployment pod names                 | `web-7d4b9c8f6d-x2kq9`                 | Matches `<name>-<replicaset-hash>-<pod-suffix>`                                                |
+| `number`   | Standalone integer runs                         | `42`, `8080`                           | Word-bounded; ignores digits embedded in words (`1500ms`, `1a2b`)                              |
 
 Additional matching flags:
 
