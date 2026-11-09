@@ -10,10 +10,11 @@ const PRESETS: &[(&str, &str)] = &[
     // also stops at non-ASCII punctuation and symbols: CJK prose puts `）。` or
     // `～` straight after a URL with no space, so trimming only trailing
     // punctuation would still swallow the rest of the sentence. The cost is
-    // cutting an IRI at `・`.
+    // cutting an IRI at `・`. The last character may not be `.,:;!?`, which
+    // after a URL end the sentence far more often than the URL.
     (
         "url",
-        r#"(?:https?|ftp|file)://[[^\s)\]>"'}]--[[\p{P}\p{S}]--\p{ASCII}]]+"#,
+        r#"(?:https?|ftp|file)://[[^\s)\]>"'}]--[[\p{P}\p{S}]--\p{ASCII}]]*[[^\s)\]>"'}.,:;!?]--[[\p{P}\p{S}]--\p{ASCII}]]"#,
     ),
     ("email", r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"),
     ("ipv4", r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"),
@@ -117,6 +118,21 @@ mod tests {
             [
                 "https://github.com/wez/wezterm/issues/1",
                 "https://ja.wikipedia.org/wiki/猫"
+            ]
+        );
+    }
+
+    #[test]
+    fn url_drops_trailing_sentence_punctuation_but_keeps_it_inside() {
+        assert_eq!(
+            all(
+                "url",
+                "see https://example.com/a. Or https://x.io/a.b?q=1, then https://y.io/c:"
+            ),
+            [
+                "https://example.com/a",
+                "https://x.io/a.b?q=1",
+                "https://y.io/c"
             ]
         );
     }
@@ -280,10 +296,11 @@ mod proptests {
     use proptest::prelude::*;
     use regex::Regex;
 
-    const URL_CHARS: &[char] = &[
-        'a', 'Z', '0', '/', '.', '-', '_', '~', '?', '=', '&', '#', '%', '+', ':', '@', '猫', 'ア',
-        'ー', 'é',
+    const URL_END_CHARS: &[char] = &[
+        'a', 'Z', '0', '/', '-', '_', '~', '=', '&', '#', '%', '+', '@', '猫', 'ア', 'ー', 'é',
     ];
+
+    const SENTENCE_PUNCT: &[char] = &['.', ',', ':', ';', '!', '?'];
 
     const NON_ASCII_TERMINATORS: &[&str] = &[
         "）", "。", "、", "」", "』", "】", "：", "！", "？", "…", "～", "＞", "｜", "🎉",
@@ -292,8 +309,19 @@ mod proptests {
     const LEADS: &[&str] = &["", " ", "（", "「", "詳細は", "see "];
 
     fn url_body() -> impl Strategy<Value = String> {
-        proptest::collection::vec(proptest::sample::select(URL_CHARS), 1..30)
-            .prop_map(|cs| cs.into_iter().collect())
+        let any_char = [URL_END_CHARS, SENTENCE_PUNCT].concat();
+        (
+            proptest::collection::vec(proptest::sample::select(any_char), 0..30),
+            proptest::sample::select(URL_END_CHARS),
+        )
+            .prop_map(|(mut cs, last)| {
+                cs.push(last);
+                cs.into_iter().collect()
+            })
+    }
+
+    fn url_re() -> Regex {
+        Regex::new(pattern("url").expect("url preset")).expect("url compiles")
     }
 
     proptest! {
@@ -304,10 +332,23 @@ mod proptests {
             stop in proptest::sample::select(NON_ASCII_TERMINATORS),
             rest in any::<String>(),
         ) {
-            let re = Regex::new(pattern("url").expect("url preset")).expect("url compiles");
             let url = format!("https://{body}");
             let text = format!("{lead}{url}{stop}{rest}");
-            let found = re.find(&text).expect("a url").as_str();
+            let found = url_re().find(&text).expect("a url").as_str();
+            prop_assert_eq!(found, url.as_str());
+        }
+
+        #[test]
+        fn url_leaves_out_sentence_punctuation_before_a_space_or_the_end(
+            lead in proptest::sample::select(LEADS),
+            body in url_body(),
+            punct in proptest::collection::vec(proptest::sample::select(SENTENCE_PUNCT), 1..4),
+            after in prop_oneof![Just(String::new()), any::<String>().prop_map(|r| format!(" {r}"))],
+        ) {
+            let url = format!("https://{body}");
+            let punct: String = punct.into_iter().collect();
+            let text = format!("{lead}{url}{punct}{after}");
+            let found = url_re().find(&text).expect("a url").as_str();
             prop_assert_eq!(found, url.as_str());
         }
     }
