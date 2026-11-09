@@ -22,6 +22,12 @@
       matchUpdateTypes: ["minor"],
       automerge: false,
     },
+    {
+      // felis-grid implements felis-vt's Sink trait, so the two only compile
+      // when their versions move in lockstep.
+      matchPackageNames: ["felis-vt", "felis-grid"],
+      groupName: "felis",
+    },
   ],
   nix: {
     enabled: true,
