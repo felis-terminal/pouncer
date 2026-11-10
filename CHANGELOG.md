@@ -10,6 +10,8 @@ on `main` since the last tag accrues under Unreleased.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-10
+
 ### Fixed
 
 - The `url` preset stops at non-ASCII punctuation and symbols, so a URL followed directly by `）。`, `、`, or `～` in
@@ -21,5 +23,6 @@ on `main` since the last tag accrues under Unreleased.
 
 Initial release, for Linux, macOS, and Windows.
 
-[unreleased]: https://github.com/felis-terminal/pouncer/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/felis-terminal/pouncer/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/felis-terminal/pouncer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/felis-terminal/pouncer/releases/tag/v0.1.0
