@@ -358,28 +358,30 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "felis-grid"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58a07ebf3985df863db74b3f0dc658e25ee66d334b98a1b28e462b0bda24cb4a"
+checksum = "666c41787b265f97eeed491324cbb5aa02823ad08c7b07c4f8070e0a03d2b267"
 dependencies = [
  "bitflags",
  "bytes",
  "felis-protocol",
  "felis-vt",
  "foldhash",
- "indexmap",
+ "libc",
+ "miniz_oxide",
  "regex",
  "serde",
  "simdutf8",
  "thiserror 2.0.21",
  "unicode-width",
+ "windows-sys",
 ]
 
 [[package]]
 name = "felis-protocol"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55017fa57cf08f46ec327fb7ed60b17ca1cc277056864a8625b87c530a69ddc9"
+checksum = "8e4d724fcf5e1d715feedc0a2f1db749ed6d82025b3d1936163dca0025aa1f81"
 dependencies = [
  "bitflags",
  "bytes",
@@ -391,13 +393,9 @@ dependencies = [
 
 [[package]]
 name = "felis-vt"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88d7a6f8adbadf4ea5653cb1d9f869cbac7662edbe27a64d7a18e0df711ad2ba"
-dependencies = [
- "felis-protocol",
- "miniz_oxide",
-]
+checksum = "b644c1ad5c350900ef7eb5b4942c162b8be7b8958e24768f418c4e5db7c63839"
 
 [[package]]
 name = "filedescriptor"
@@ -454,8 +452,6 @@ checksum = "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855"
 dependencies = [
  "equivalent",
  "hashbrown",
- "serde",
- "serde_core",
 ]
 
 [[package]]
