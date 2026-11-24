@@ -262,7 +262,16 @@ ssh "root@$(arp -a | pouncer --preset ipv4)"
 kind = "pipe"
 source = "scrollback"
 ansi = true
-target = { command = ["pouncer", "--preset", "url,path,filepos", "--reverse", "--action", "copy", "--upper-action", "open"] }
+target = { command = [
+  "pouncer",
+  "--preset",
+  "url,path,filepos",
+  "--reverse",
+  "--action",
+  "copy",
+  "--upper-action",
+  "open",
+] }
 ```
 
 ```tmux
