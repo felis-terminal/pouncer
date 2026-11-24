@@ -8,7 +8,7 @@
     schedule: ["before 3:00am on monday"],
   },
   automerge: true,
-  automergeStrategy: "squash",
+  automergeStrategy: "merge-commit",
   prConcurrentLimit: 5,
   packageRules: [
     {
