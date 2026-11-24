@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: Mic92/niks3-action@01820a2b97ac01531ad9fb859db94af63ffcbd83 # v1.10.0
+      - uses: Mic92/niks3-action@53fc4d8be8e7f3693e1a6be91eede40590b0d1d2 # v1.12.0
         with:
           server-url: https://niks3.natsukium.com
       - run: nix run --inputs-from . nixpkgs#nix-fast-build -- --no-nom --skip-cached --no-link --flake .#checks
